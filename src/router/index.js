@@ -33,6 +33,13 @@ export default new Router({
     ],
   },
   {
-    path: '/parts/:partType/:id', name: 'Parts', component: PartInfo, props: true,
+    path: '/parts/:partType/:id',
+    name: 'Parts',
+    component: PartInfo,
+    props: true,
+    beforeEnter(to, from, next) {
+      const isValidId = Number.isInteger(Number(to.params.id));
+      next(isValidId);
+    },
   }],
 });
