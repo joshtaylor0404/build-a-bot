@@ -1,5 +1,5 @@
 <template>
-  <div class="content">
+  <div v-if="availableParts" class="content">
     <div class="preview">
       <CollapsableSection>
         <div class="preview-content">
@@ -53,34 +53,19 @@
         @partSelected="part => selectedRobot.base = part"
       />
     </div>
-    <div>
-      <h1>Cart</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Robot</th>
-            <th class="cost">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(robot, index) in cart" :key="index">
-            <td>{{robot.head.title}}</td>
-            <td class="cost">{{robot.cost}}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 </template>
 
 <script>
-import availableParts from '../../data/parts';
 import createdHookMixin from './created-hook-mixin';
 import PartSelector from './PartSelector.vue';
 import CollapsableSection from '../shared/CollapsableSection.vue';
 
 export default {
   name: 'RobotBuilder',
+  created() {
+    this.$store.dispatch('robots/getParts');
+  },
   beforeRouteLeave(to, from, next) {
     if (this.addedToCart) {
       next(true);
@@ -94,9 +79,7 @@ export default {
   components: { PartSelector, CollapsableSection },
   data() {
     return {
-      availableParts,
       cart: [],
-      addedToCart: false,
       selectedRobot: {
         head: {},
         leftArm: {},
@@ -108,8 +91,14 @@ export default {
   },
   mixins: [createdHookMixin],
   computed: {
+    availableParts() {
+      return this.$store.state.robots.parts;
+    },
     saleBorderClass() {
       return this.selectedRobot.head.onSale ? 'sale-border' : '';
+    },
+    addedToCart() {
+      return !!this.$store.state.robots.cart.length; // only works for first robot currently
     },
   },
   methods: {
@@ -121,8 +110,7 @@ export default {
         + robot.rightArm.cost
         + robot.torso.cost;
 
-      this.cart.push(Object.assign({}, robot, { cost }));
-      this.addedToCart = true;
+      this.$store.dispatch('robots/addRobotToCart', Object.assign({}, robot, { cost })).then(() => this.$router.push('/cart'));
     },
   },
 };
